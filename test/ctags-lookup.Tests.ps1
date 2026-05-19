@@ -1,5 +1,5 @@
 BeforeAll {
-    . (Join-Path $PSScriptRoot ".." "ctags-lookup-core.ps1")
+    . (Join-Path $PSScriptRoot ".." "scripts" "core.ps1")
     $Script:TestTagsFile = Join-Path $PSScriptRoot "tags"
 }
 
@@ -58,133 +58,37 @@ Describe "Invoke-CtagsLookup" {
             $results = Invoke-CtagsLookup -TagsFile $Script:TestTagsFile -Prefix "ZZZNONEXISTENT"
             $results.Count | Should -Be 0
         }
-
-        It "Should combine prefix with kind filter" {
-            $results = Invoke-CtagsLookup -TagsFile $Script:TestTagsFile -Prefix "Get" -Kind m
-            $results.Count | Should -BeGreaterThan 0
-            $results | ForEach-Object {
-                $_.Name | Should -BeLike "Get*"
-                $_.Kind | Should -Be "method"
-            }
-        }
     }
 
-    Context "Kind Filter" {
+    Context "Pattern Search" {
 
-        It "Should filter by class kind" {
-            $results = Invoke-CtagsLookup -TagsFile $Script:TestTagsFile -Kind c
+        It "Should match symbols containing pattern" {
+            $results = Invoke-CtagsLookup -TagsFile $Script:TestTagsFile -Pattern "Get.*Client"
             $results.Count | Should -BeGreaterThan 0
-            $results | Select-Object -First 10 | ForEach-Object { $_.Kind | Should -Be "class" }
+            $results | ForEach-Object { $_.Name | Should -Match "Get.*Client" }
         }
 
-        It "Should filter by method kind" {
-            $results = Invoke-CtagsLookup -TagsFile $Script:TestTagsFile -Kind m
+        It "Should support end anchor to match symbol names ending with" {
+            $results = Invoke-CtagsLookup -TagsFile $Script:TestTagsFile -Pattern "Dispose$"
             $results.Count | Should -BeGreaterThan 0
-            $results | Select-Object -First 10 | ForEach-Object { $_.Kind | Should -Be "method" }
+            $results | ForEach-Object { $_.Name | Should -Match "Dispose$" }
         }
 
-        It "Should filter by field kind" {
-            $results = Invoke-CtagsLookup -TagsFile $Script:TestTagsFile -Kind f
+        It "Should support start and end anchors for exact match" {
+            $results = Invoke-CtagsLookup -TagsFile $Script:TestTagsFile -Pattern "^Dispose$"
             $results.Count | Should -BeGreaterThan 0
-            $results | Select-Object -First 10 | ForEach-Object { $_.Kind | Should -Be "field" }
+            $results | ForEach-Object { $_.Name | Should -Be "Dispose" }
         }
 
-        It "Should filter by property kind" {
-            $results = Invoke-CtagsLookup -TagsFile $Script:TestTagsFile -Kind p
+        It "Should support character classes" {
+            $results = Invoke-CtagsLookup -TagsFile $Script:TestTagsFile -Pattern "^I[A-Z].*able$"
             $results.Count | Should -BeGreaterThan 0
-            $results | Select-Object -First 10 | ForEach-Object { $_.Kind | Should -Be "property" }
+            $results | ForEach-Object { $_.Name | Should -Match "^I[A-Z].*able$" }
         }
 
-        It "Should filter by interface kind" {
-            $results = Invoke-CtagsLookup -TagsFile $Script:TestTagsFile -Kind i
-            $results.Count | Should -BeGreaterThan 0
-            $results | Select-Object -First 10 | ForEach-Object { $_.Kind | Should -Be "interface" }
-        }
-
-        It "Should filter by namespace kind" {
-            $results = Invoke-CtagsLookup -TagsFile $Script:TestTagsFile -Kind n
-            $results.Count | Should -BeGreaterThan 0
-            $results | Select-Object -First 10 | ForEach-Object { $_.Kind | Should -Be "namespace" }
-        }
-
-        It "Should filter by enumerator kind" {
-            $results = Invoke-CtagsLookup -TagsFile $Script:TestTagsFile -Kind e
-            $results.Count | Should -BeGreaterThan 0
-            $results | Select-Object -First 10 | ForEach-Object { $_.Kind | Should -Be "enumerator" }
-        }
-
-        It "Should filter by enum kind" {
-            $results = Invoke-CtagsLookup -TagsFile $Script:TestTagsFile -Kind g
-            $results.Count | Should -BeGreaterThan 0
-            $results | Select-Object -First 10 | ForEach-Object { $_.Kind | Should -Be "enum" }
-        }
-
-        It "Should filter by struct kind" {
-            $results = Invoke-CtagsLookup -TagsFile $Script:TestTagsFile -Kind s
-            $results.Count | Should -BeGreaterThan 0
-            $results | Select-Object -First 10 | ForEach-Object { $_.Kind | Should -Be "struct" }
-        }
-
-        It "Should filter by typedef kind" {
-            $results = Invoke-CtagsLookup -TagsFile $Script:TestTagsFile -Kind t
-            $results.Count | Should -BeGreaterThan 0
-            $results | Select-Object -First 10 | ForEach-Object { $_.Kind | Should -Be "typedef" }
-        }
-
-        It "Should be case-sensitive for kind (e vs E)" {
-            $resultsLower = Invoke-CtagsLookup -TagsFile $Script:TestTagsFile -Kind e
-            $resultsLower | Select-Object -First 5 | ForEach-Object { $_.Kind | Should -Be "enumerator" }
-            $resultsUpper = Invoke-CtagsLookup -TagsFile $Script:TestTagsFile -Kind E
-            $resultsUpper | ForEach-Object { $_.Kind | Should -Be "event" }
-        }
-    }
-
-    Context "File Filter" {
-
-        It "Should filter results by file path substring" {
-            $results = Invoke-CtagsLookup -TagsFile $Script:TestTagsFile -File "mscorlib"
-            $results.Count | Should -BeGreaterThan 0
-            $results | Select-Object -First 10 | ForEach-Object { $_.File | Should -BeLike "*mscorlib*" }
-        }
-
-        It "Should combine file and kind filters" {
-            $results = Invoke-CtagsLookup -TagsFile $Script:TestTagsFile -Kind c -File "mscorlib"
-            $results.Count | Should -BeGreaterThan 0
-            $results | Select-Object -First 10 | ForEach-Object {
-                $_.Kind | Should -Be "class"
-                $_.File | Should -BeLike "*mscorlib*"
-            }
-        }
-
-        It "Should return empty for non-matching file" {
-            $results = Invoke-CtagsLookup -TagsFile $Script:TestTagsFile -Kind c -File "NonExistentProject99999"
+        It "Should return empty for non-matching pattern" {
+            $results = Invoke-CtagsLookup -TagsFile $Script:TestTagsFile -Pattern "^ZZZZZ99999$"
             $results.Count | Should -Be 0
-        }
-    }
-
-    Context "Combined Filters" {
-
-        It "Should combine Name and Kind filters" {
-            $results = Invoke-CtagsLookup -TagsFile $Script:TestTagsFile -Name "Dispose" -Kind m
-            $results.Count | Should -BeGreaterThan 0
-            $results | ForEach-Object {
-                $_.Name | Should -Be "Dispose"
-                $_.Kind | Should -Be "method"
-            }
-        }
-
-        It "Should return empty when combined filters exclude everything" {
-            $results = Invoke-CtagsLookup -TagsFile $Script:TestTagsFile -Name "Dispose" -Kind c
-            $results.Count | Should -Be 0
-        }
-
-        It "Should combine Name and File filters" {
-            $results = Invoke-CtagsLookup -TagsFile $Script:TestTagsFile -Name "Dispose" -File "mscorlib"
-            $results.Count | Should -BeGreaterThan 0
-            $results | ForEach-Object {
-                $_.Name | Should -Be "Dispose"
-                $_.File | Should -BeLike "*mscorlib*"
-            }
         }
     }
 
@@ -208,54 +112,19 @@ Describe "Invoke-CtagsLookup" {
 
     Context "Kind Mapping" {
 
-        It "Should map 'c' to 'class'" {
-            $results = Invoke-CtagsLookup -TagsFile $Script:TestTagsFile -Kind c
-            $results[0].Kind | Should -Be "class"
-        }
-
-        It "Should map 'm' to 'method'" {
-            $results = Invoke-CtagsLookup -TagsFile $Script:TestTagsFile -Kind m
+        It "Should map kind codes to readable names" {
+            $results = Invoke-CtagsLookup -TagsFile $Script:TestTagsFile -Name "Dispose"
             $results[0].Kind | Should -Be "method"
         }
 
-        It "Should map 'f' to 'field'" {
-            $results = Invoke-CtagsLookup -TagsFile $Script:TestTagsFile -Kind f
+        It "Should map class kind" {
+            $results = Invoke-CtagsLookup -TagsFile $Script:TestTagsFile -Name "ADAsyncWorkItem"
+            ($results | Where-Object { $_.Kind -eq "class" }).Count | Should -BeGreaterThan 0
+        }
+
+        It "Should map field kind" {
+            $results = Invoke-CtagsLookup -TagsFile $Script:TestTagsFile -Name "ACCEPT_NETBINDCHANGE"
             $results[0].Kind | Should -Be "field"
-        }
-
-        It "Should map 'p' to 'property'" {
-            $results = Invoke-CtagsLookup -TagsFile $Script:TestTagsFile -Kind p
-            $results[0].Kind | Should -Be "property"
-        }
-
-        It "Should map 'i' to 'interface'" {
-            $results = Invoke-CtagsLookup -TagsFile $Script:TestTagsFile -Kind i
-            $results[0].Kind | Should -Be "interface"
-        }
-
-        It "Should map 'n' to 'namespace'" {
-            $results = Invoke-CtagsLookup -TagsFile $Script:TestTagsFile -Kind n
-            $results[0].Kind | Should -Be "namespace"
-        }
-
-        It "Should map 'e' to 'enumerator'" {
-            $results = Invoke-CtagsLookup -TagsFile $Script:TestTagsFile -Kind e
-            $results[0].Kind | Should -Be "enumerator"
-        }
-
-        It "Should map 'g' to 'enum'" {
-            $results = Invoke-CtagsLookup -TagsFile $Script:TestTagsFile -Kind g
-            $results[0].Kind | Should -Be "enum"
-        }
-
-        It "Should map 's' to 'struct'" {
-            $results = Invoke-CtagsLookup -TagsFile $Script:TestTagsFile -Kind s
-            $results[0].Kind | Should -Be "struct"
-        }
-
-        It "Should map 't' to 'typedef'" {
-            $results = Invoke-CtagsLookup -TagsFile $Script:TestTagsFile -Kind t
-            $results[0].Kind | Should -Be "typedef"
         }
     }
 
@@ -263,7 +132,6 @@ Describe "Invoke-CtagsLookup" {
 
         It "Should parse line numbers" {
             $results = Invoke-CtagsLookup -TagsFile $Script:TestTagsFile -Name "ACCEPT_NETBINDCHANGE"
-            $results.Count | Should -BeGreaterThan 0
             $results[0].Line | Should -Be "95"
         }
 
@@ -272,16 +140,10 @@ Describe "Invoke-CtagsLookup" {
             $results[0].Scope | Should -BeLike "class:*"
         }
 
-        It "Should parse namespace scope" {
-            $results = Invoke-CtagsLookup -TagsFile $Script:TestTagsFile -Kind g
-            $withScope = $results | Where-Object { $_.Scope -like "*namespace:*" } | Select-Object -First 1
-            $withScope | Should -Not -BeNullOrEmpty
-        }
-
         It "Should handle entries without scope" {
-            $results = Invoke-CtagsLookup -TagsFile $Script:TestTagsFile -Kind n
-            $noScope = $results | Where-Object { [string]::IsNullOrEmpty($_.Scope) } | Select-Object -First 1
-            $noScope | Should -Not -BeNullOrEmpty
+            $results = Invoke-CtagsLookup -TagsFile $Script:TestTagsFile -Prefix "LinqToSqlShared"
+            $noScope = $results | Where-Object { [string]::IsNullOrEmpty($_.Scope) }
+            $noScope.Count | Should -BeGreaterThan 0
         }
     }
 

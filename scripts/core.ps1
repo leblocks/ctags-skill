@@ -10,27 +10,23 @@ function Invoke-CtagsLookup {
         Symbol name to search for (exact match).
     .PARAMETER Prefix
         Search symbols starting with this prefix.
-    .PARAMETER Kind
-        Filter by kind: c(lass), m(ethod), f(ield), p(roperty), i(nterface),
-        n(amespace), e(numerator), g(enum), s(truct), E(vent), d(macro), t(typedef)
-    .PARAMETER File
-        Filter results to symbols in a specific file (substring match).
+    .PARAMETER Pattern
+        Regex pattern to match against symbol names (the first field before tab).
     #>
     param(
         [Parameter(Mandatory)]
         [string]$TagsFile,
         [string]$Name,
         [string]$Prefix,
-        [string]$Kind,
-        [string]$File
+        [string]$Pattern
     )
 
     if (-not (Test-Path $TagsFile)) {
         throw "Tags file not found: $TagsFile"
     }
 
-    if (-not $Name -and -not $Prefix -and -not $Kind -and -not $File) {
-        throw "Specify at least one of: -Name, -Prefix, -Kind, -File"
+    if (-not $Name -and -not $Prefix -and -not $Pattern) {
+        throw "Specify at least one of: -Name, -Prefix, -Pattern"
     }
 
     $kindMap = New-Object 'System.Collections.Generic.Dictionary[string,string]'
@@ -39,22 +35,27 @@ function Invoke-CtagsLookup {
     $kindMap.Add("e", "enumerator"); $kindMap.Add("g", "enum"); $kindMap.Add("s", "struct")
     $kindMap.Add("E", "event"); $kindMap.Add("d", "macro"); $kindMap.Add("t", "typedef")
 
-    # Build rg pattern
+    # Build rg pattern — symbol name is always ^<name>\t
     if ($Name) {
         $rgPattern = "^$([regex]::Escape($Name))`t"
     } elseif ($Prefix) {
-        $rgPattern = "^$([regex]::Escape($Prefix))"
-    } elseif ($Kind) {
-        $rgPattern = "`t$([regex]::Escape($Kind))`t"
-    } elseif ($File) {
-        $rgPattern = [regex]::Escape($File)
+        $rgPattern = "^$([regex]::Escape($Prefix))[^`t]*`t"
+    } elseif ($Pattern) {
+        # Extract longest literal prefix for rg pre-filter; post-filter validates the full regex
+        $literalPrefix = ""
+        $stripped = $Pattern -replace '^\^', ''
+        foreach ($ch in $stripped.ToCharArray()) {
+            if ($ch -match '[.*+?{}()\[\]|\\$^]') { break }
+            $literalPrefix += $ch
+        }
+        $rgPattern = if ($literalPrefix.Length -ge 2) { "^$([regex]::Escape($literalPrefix))" } else { "^[^!]" }
     }
 
     # Run ripgrep
     $rawLines = & rg --no-filename --no-line-number -e $rgPattern $TagsFile 2>$null
 
     if (-not $rawLines) {
-        return @()
+        return ,@()
     }
 
     # Parse matched lines
@@ -70,10 +71,9 @@ function Invoke-CtagsLookup {
         $tagFile = $tabParts[1]
         $tagKind = $tabParts[3]
 
-        # Post-filters for combined queries
+        # Post-filter for exact name match or pattern against name field
         if ($Name -and $tagName -cne $Name) { continue }
-        if ($Kind -and $tagKind -cne $Kind) { continue }
-        if ($File -and $tagFile -notlike "*$File*") { continue }
+        if ($Pattern -and $tagName -notmatch $Pattern) { continue }
 
         $tagLine = ""
         $tagScope = ""
