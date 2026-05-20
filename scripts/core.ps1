@@ -47,28 +47,21 @@ function Invoke-CtagsLookup {
         $rgPattern = "^$([regex]::Escape($Prefix))[^`t]*`t"
     }
 
-    # Run ripgrep
-    $rawLines = & rg --no-filename --no-line-number -e $rgPattern $TagsFile 2>$null
-
-    if (-not $rawLines) {
-        return ,@()
-    }
-
-    # Parse matched lines
+    # Run ripgrep and parse results as they stream in
     $results = [System.Collections.Generic.List[object]]::new()
 
-    foreach ($line in $rawLines) {
-        if ($line.StartsWith("!_TAG")) { continue }
+    & rg --no-filename --no-line-number -e $rgPattern $TagsFile 2>$null | ForEach-Object {
+        if ($_.StartsWith("!_TAG")) { return }
 
-        $tabParts = $line.Split("`t")
-        if ($tabParts.Count -lt 4) { continue }
+        $tabParts = $_.Split("`t")
+        if ($tabParts.Count -lt 4) { return }
 
         $tagName = $tabParts[0]
         $tagFile = $tabParts[1]
         $tagKind = $tabParts[3]
 
         # Post-filter for exact name match
-        if ($Name -and $tagName -cne $Name) { continue }
+        if ($Name -and $tagName -cne $Name) { return }
 
         $tagLine = ""
         $tagScope = ""
