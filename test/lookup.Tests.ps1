@@ -60,38 +60,6 @@ Describe "Invoke-CtagsLookup" {
         }
     }
 
-    Context "Pattern Search" {
-
-        It "Should match symbols containing pattern" {
-            $results = Invoke-CtagsLookup -TagsFile $Script:TestTagsFile -Pattern "Get.*Client"
-            $results.Count | Should -BeGreaterThan 0
-            $results | ForEach-Object { $_.Name | Should -Match "Get.*Client" }
-        }
-
-        It "Should support end anchor to match symbol names ending with" {
-            $results = Invoke-CtagsLookup -TagsFile $Script:TestTagsFile -Pattern "Dispose$"
-            $results.Count | Should -BeGreaterThan 0
-            $results | ForEach-Object { $_.Name | Should -Match "Dispose$" }
-        }
-
-        It "Should support start and end anchors for exact match" {
-            $results = Invoke-CtagsLookup -TagsFile $Script:TestTagsFile -Pattern "^Dispose$"
-            $results.Count | Should -BeGreaterThan 0
-            $results | ForEach-Object { $_.Name | Should -Be "Dispose" }
-        }
-
-        It "Should support character classes" {
-            $results = Invoke-CtagsLookup -TagsFile $Script:TestTagsFile -Pattern "^I[A-Z].*able$"
-            $results.Count | Should -BeGreaterThan 0
-            $results | ForEach-Object { $_.Name | Should -Match "^I[A-Z].*able$" }
-        }
-
-        It "Should return empty for non-matching pattern" {
-            $results = Invoke-CtagsLookup -TagsFile $Script:TestTagsFile -Pattern "^ZZZZZ99999$"
-            $results.Count | Should -Be 0
-        }
-    }
-
     Context "Output Structure" {
 
         It "Should return objects with all expected properties" {

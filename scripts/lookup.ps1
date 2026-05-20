@@ -13,8 +13,7 @@
 param(
     [string]$TagsFile,
     [string]$Name,
-    [string]$Prefix,
-    [string]$Pattern
+    [string]$Prefix
 )
 
 . (Join-Path $PSScriptRoot "core.ps1")
@@ -24,7 +23,7 @@ if (-not $TagsFile) {
 }
 
 try {
-    $results = Invoke-CtagsLookup -TagsFile $TagsFile -Name $Name -Prefix $Prefix -Pattern $Pattern
+    $results = Invoke-CtagsLookup -TagsFile $TagsFile -Name $Name -Prefix $Prefix
 } catch {
     Write-Error $_.Exception.Message
     exit 1
