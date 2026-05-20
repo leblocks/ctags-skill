@@ -23,7 +23,7 @@ if (-not $TagsFile) {
 }
 
 try {
-    $results = Invoke-CtagsLookup -TagsFile $TagsFile -Name $Name -Prefix $Prefix
+    $results = @(Invoke-CtagsLookup -TagsFile $TagsFile -Name $Name -Prefix $Prefix)
 } catch {
     Write-Error $_.Exception.Message
     exit 1

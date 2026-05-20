@@ -3,7 +3,7 @@ function Invoke-CtagsLookup {
     .SYNOPSIS
         Fast ctags symbol lookup using ripgrep.
     .DESCRIPTION
-        Searches a ctags tags file using ripgrep for speed, returns parsed results as objects.
+        Searches a ctags tags file using ripgrep for speed, emits parsed results as objects to the pipeline.
     .PARAMETER TagsFile
         Path to the tags file.
     .PARAMETER Name
@@ -47,9 +47,7 @@ function Invoke-CtagsLookup {
         $rgPattern = "^$([regex]::Escape($Prefix))[^`t]*`t"
     }
 
-    # Run ripgrep and parse results as they stream in
-    $results = [System.Collections.Generic.List[object]]::new()
-
+    # Run ripgrep and emit parsed results to the pipeline
     & rg --no-filename --no-line-number -e $rgPattern $TagsFile 2>$null | ForEach-Object {
         if ($_.StartsWith("!_TAG")) { return }
 
@@ -70,14 +68,12 @@ function Invoke-CtagsLookup {
             elseif ($tabParts[$i] -match "^(class|enum|interface|namespace|struct):") { $tagScope = $tabParts[$i] }
         }
 
-        $results.Add([PSCustomObject]@{
+        [PSCustomObject]@{
             Name  = $tagName
             Kind  = if ($kindMap.ContainsKey($tagKind)) { $kindMap[$tagKind] } else { $tagKind }
             File  = $tagFile
             Line  = $tagLine
             Scope = $tagScope
-        })
+        }
     }
-
-    return ,$results.ToArray()
 }
