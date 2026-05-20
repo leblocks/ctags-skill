@@ -16,7 +16,13 @@ param(
     [string]$Prefix
 )
 
-. (Join-Path $PSScriptRoot "core.ps1")
+$coreScriptPath = Join-Path $PSScriptRoot "core.ps1"
+try {
+    . $coreScriptPath
+} catch {
+    Write-Error "Failed to load core lookup script '$coreScriptPath': $($_.Exception.Message)"
+    exit 1
+}
 
 if (-not $TagsFile) {
     $TagsFile = Join-Path $PSScriptRoot "tags"
@@ -25,12 +31,12 @@ if (-not $TagsFile) {
 try {
     $results = @(Invoke-CtagsLookup -TagsFile $TagsFile -Name $Name -Prefix $Prefix)
 } catch {
-    Write-Error $_.Exception.Message
+    Write-Error "ctags lookup failed: $($_.Exception.Message)"
     exit 1
 }
 
 if ($results.Count -eq 0) {
-    Write-Host "[]"
+    Write-Output "[]"
 } else {
     ConvertTo-Json -InputObject @($results) -Compress
 }

@@ -1,6 +1,6 @@
 ---
 name: ctags-lookup
-description: Fast symbol lookup in Universal Ctags tags files using ripgrep. Use when navigating large codebases, finding symbol definitions, or resolving symbol locations by name or prefix.
+description: Performs fast symbol lookup in Universal Ctags tags files using ripgrep when navigating large codebases, finding symbol definitions, or resolving symbol locations by name or prefix.
 license: MIT
 compatibility: requires rg (ripgrep), PowerShell 5.1+
 metadata:
@@ -21,13 +21,13 @@ Fast symbol lookup against a Universal Ctags `tags` file. Returns JSON arrays of
 
 ```powershell
 # Exact symbol name lookup
-.\scripts\lookup.ps1 -Name "Dispose"
+./scripts/lookup.ps1 -Name "Dispose"
 
 # Prefix search (starts-with)
-.\scripts\lookup.ps1 -Prefix "Get"
+./scripts/lookup.ps1 -Prefix "Get"
 
 # Custom tags file path
-.\scripts\lookup.ps1 -TagsFile "C:\myproject\tags" -Name "MyClass"
+./scripts/lookup.ps1 -TagsFile "/path/to/tags" -Name "MyClass"
 ```
 
 ## Output Format
@@ -58,7 +58,7 @@ Empty results return `[]`.
 ## As a Function
 
 ```powershell
-. .\scripts\core.ps1
-$results = @(Invoke-CtagsLookup -TagsFile .\tags -Name "Dispose")
+. ./scripts/core.ps1
+$results = @(Invoke-CtagsLookup -TagsFile ./tags -Name "Dispose")
 $results | Where-Object { $_.Kind -eq "method" }
 ```

@@ -18,54 +18,79 @@ function Invoke-CtagsLookup {
         [string]$Prefix
     )
 
-    if (-not (Test-Path $TagsFile)) {
+    if ([string]::IsNullOrWhiteSpace($TagsFile)) {
+        throw "Tags file path must not be empty."
+    }
+
+    if (-not (Test-Path -LiteralPath $TagsFile -PathType Leaf)) {
         throw "Tags file not found: $TagsFile"
+    }
+
+    if ($Name -and $Prefix) {
+        throw "Specify either -Name or -Prefix, not both."
     }
 
     if (-not $Name -and -not $Prefix) {
         throw "Specify at least one of: -Name, -Prefix"
     }
 
+    $ripgrepCommand = Get-Command -Name "rg" -CommandType Application -ErrorAction SilentlyContinue
+    if (-not $ripgrepCommand) {
+        throw "ripgrep executable 'rg' was not found on PATH. Install ripgrep and ensure 'rg' is available before running ctags lookup."
+    }
+
+    $minimumTagFieldCount = 4
+    $tagNameIndex = 0
+    $tagFileIndex = 1
+    $tagKindIndex = 3
+    $extensionFieldsStartIndex = 4
+    $lineFieldPrefix = "line:"
+    $tagFieldSeparator = "`t"
+    $scopePattern = "^(class|enum|interface|namespace|struct):"
+
     $kindMap = New-Object 'System.Collections.Generic.Dictionary[string,string]'
-    $kindMap.Add("c", "class");
-    $kindMap.Add("m", "method");
-    $kindMap.Add("f", "field");
-    $kindMap.Add("p", "property");
-    $kindMap.Add("i", "interface");
-    $kindMap.Add("n", "namespace");
-    $kindMap.Add("e", "enumerator");
-    $kindMap.Add("g", "enum");
+    $kindMap.Add("c", "class")
+    $kindMap.Add("m", "method")
+    $kindMap.Add("f", "field")
+    $kindMap.Add("p", "property")
+    $kindMap.Add("i", "interface")
+    $kindMap.Add("n", "namespace")
+    $kindMap.Add("e", "enumerator")
+    $kindMap.Add("g", "enum")
     $kindMap.Add("s", "struct")
-    $kindMap.Add("E", "event");
-    $kindMap.Add("d", "macro");
+    $kindMap.Add("E", "event")
+    $kindMap.Add("d", "macro")
     $kindMap.Add("t", "typedef")
 
     # Build rg pattern — symbol name is always ^<name>\t
     if ($Name) {
         $rgPattern = "^$([regex]::Escape($Name))`t"
-    } elseif ($Prefix) {
+    } else {
         $rgPattern = "^$([regex]::Escape($Prefix))[^`t]*`t"
     }
 
-    # Run ripgrep and emit parsed results to the pipeline
-    & rg --no-filename --no-line-number -e $rgPattern $TagsFile 2>$null | ForEach-Object {
+    # ripgrep returns 1 when there are no matches, which is expected for empty results.
+    & $ripgrepCommand.Source --no-filename --no-line-number -e $rgPattern $TagsFile 2>$null | ForEach-Object {
         if ($_.StartsWith("!_TAG")) { return }
 
-        $tabParts = $_.Split("`t")
-        if ($tabParts.Count -lt 4) { return }
+        $tabParts = $_.Split($tagFieldSeparator)
+        if ($tabParts.Count -lt $minimumTagFieldCount) { return }
 
-        $tagName = $tabParts[0]
-        $tagFile = $tabParts[1]
-        $tagKind = $tabParts[3]
+        $tagName = $tabParts[$tagNameIndex]
+        $tagFile = $tabParts[$tagFileIndex]
+        $tagKind = $tabParts[$tagKindIndex]
 
         # Post-filter for exact name match
         if ($Name -and $tagName -cne $Name) { return }
 
         $tagLine = ""
         $tagScope = ""
-        for ($i = 4; $i -lt $tabParts.Count; $i++) {
-            if ($tabParts[$i].StartsWith("line:")) { $tagLine = $tabParts[$i].Substring(5) }
-            elseif ($tabParts[$i] -match "^(class|enum|interface|namespace|struct):") { $tagScope = $tabParts[$i] }
+        for ($i = $extensionFieldsStartIndex; $i -lt $tabParts.Count; $i++) {
+            if ($tabParts[$i].StartsWith($lineFieldPrefix)) {
+                $tagLine = $tabParts[$i].Substring($lineFieldPrefix.Length)
+            } elseif ($tabParts[$i] -match $scopePattern) {
+                $tagScope = $tabParts[$i]
+            }
         }
 
         [PSCustomObject]@{
@@ -75,5 +100,9 @@ function Invoke-CtagsLookup {
             Line  = $tagLine
             Scope = $tagScope
         }
+    }
+
+    if ($LASTEXITCODE -gt 1) {
+        throw "ripgrep failed while reading tags file '$TagsFile' (exit code $LASTEXITCODE)."
     }
 }

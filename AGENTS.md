@@ -13,13 +13,13 @@ ctags -R --fields=+lKn --extras=+f -o tags .
 
 ```powershell
 # Exact name lookup
-.\scripts\lookup.ps1 -Name "SymbolName"
+./scripts/lookup.ps1 -Name "SymbolName"
 
 # Prefix search
-.\scripts\lookup.ps1 -Prefix "Get"
+./scripts/lookup.ps1 -Prefix "Get"
 
 # Specify tags file location
-.\scripts\lookup.ps1 -TagsFile "path\to\tags" -Name "MyClass"
+./scripts/lookup.ps1 -TagsFile "/path/to/tags" -Name "MyClass"
 ```
 
 ## Output
@@ -34,5 +34,5 @@ JSON array of objects with: `Name`, `Kind`, `File`, `Line`, `Scope`. Empty resul
 ## Testing
 
 ```powershell
-Invoke-Pester .\test\ctags-lookup.Tests.ps1
+Invoke-Pester ./test/ctags-lookup.Tests.ps1
 ```

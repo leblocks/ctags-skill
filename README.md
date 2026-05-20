@@ -66,27 +66,10 @@ Empty results return `[]`.
 | `Line`   | Line number                                |
 | `Scope`  | Containing scope (class/enum/namespace...) |
 
-## Kind Mapping
-
-| Code | Output      |
-|------|-------------|
-| c    | class       |
-| m    | method      |
-| f    | field       |
-| p    | property    |
-| i    | interface   |
-| n    | namespace   |
-| e    | enumerator  |
-| g    | enum        |
-| s    | struct      |
-| E    | event       |
-| d    | macro       |
-| t    | typedef     |
-
 ## Testing
 
 ```powershell
-Invoke-Pester .\test\ctags-lookup.Tests.ps1
+Invoke-Pester -Path .\test\* -Output Detailed
 ```
 
 ## Why Use This Over grep
