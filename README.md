@@ -21,6 +21,12 @@ Tags files are language-aware (C#, Java, Python, TypeScript, etc.) and can index
 - **[jq](https://jqlang.github.io/jq/)** — required, used for parsing and JSON output
 - **[Universal Ctags](https://ctags.io/)** — needed to generate the `tags` file
 
+## Installation
+
+```bash
+npx skills add leblocks/ctags-skill
+```
+
 ## Setup
 
 1. Generate a tags file:
