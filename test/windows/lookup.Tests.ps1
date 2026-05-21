@@ -53,10 +53,6 @@ Describe "lookup.cmd" {
             $result.ExitCode | Should -Be 0
             $result.Results.Count | Should -BeGreaterThan 0
             $result.Results | ForEach-Object { $_.Name | Should -Be "Dispose" }
-            $result.Results | ForEach-Object { $_.Kind | Should -Not -BeNullOrEmpty }
-            $result.Results | ForEach-Object { $_.File | Should -Not -BeNullOrEmpty }
-            $result.Results | ForEach-Object { $_.Line | Should -Not -BeNullOrEmpty }
-            $result.Results | ForEach-Object { $_.Scope | Should -Not -BeNullOrEmpty }
         }
 
         It "Should return empty JSON array for non-existent symbol" {

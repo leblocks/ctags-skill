@@ -73,10 +73,8 @@ fi
 # rg exits 1 on no matches — that's fine, we'll get empty input to jq which produces []
 export CTAGS_EXACT_NAME="${NAME}"
 
+# Temporarily disable pipefail: rg exit 1 (no matches) is expected and jq handles empty input
+set +o pipefail
 rg --no-filename --no-line-number -e "$RG_PATTERN" "$TAGS_FILE" 2>/dev/null \
-    | jq -nMRf "$SCRIPT_DIR/parse-ctags.jq" \
-    || {
-        # If rg found no matches (exit 1), jq still gets empty stdin and outputs []
-        # If something else failed, output [] as fallback
-        echo "[]"
-    }
+    | jq -nMRf "$SCRIPT_DIR/parse-ctags.jq"
+set -o pipefail
