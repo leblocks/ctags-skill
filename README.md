@@ -3,6 +3,18 @@
 Fast symbol lookup for navigating large codebases using Universal Ctags `tags` files.
 Powered by [ripgrep](https://github.com/BurntSushi/ripgrep) + [jq](https://jqlang.github.io/jq/) for speed. Outputs JSON.
 
+## What Are Tags Files?
+
+A `tags` file is a pre-built index of symbol definitions (classes, methods, fields, etc.) extracted from source code by [Universal Ctags](https://ctags.io/). Each line maps a symbol name to its source file, line number, kind, and scope — essentially a lookup table for "where is this thing defined?"
+
+**Why use tags instead of grepping source directly?**
+
+- **Speed** — searching a single index file is orders of magnitude faster than scanning thousands of source files
+- **Precision** — tags contain only *definitions*, not usages, comments, or string literals
+- **Structure** — each entry includes the symbol kind (class/method/field), line number, and containing scope, so you know exactly what you're looking at
+
+Tags files are language-aware (C#, Java, Python, TypeScript, etc.) and can index entire monorepos in seconds. Once generated, they serve as a fast offline lookup for any tool that needs to resolve symbol locations.
+
 ## Prerequisites
 
 - **[ripgrep](https://github.com/BurntSushi/ripgrep)** (`rg`) — required, used for fast file searching
@@ -62,16 +74,27 @@ Empty results return `[]`.
 
 ## Why Use This Over grep
 
-When an agent needs to find where a symbol is defined, it typically greps across all source files. On a large codebase (.NET Reference Source, 83 MB tags file / 413K symbols), the difference is dramatic:
+When an agent needs to find where a symbol is defined, it typically greps across all source files. On a large codebase ([microsoft/referencesource](https://github.com/microsoft/referencesource), 83 MB tags file / 413K symbols), the difference is dramatic:
+
+### Exact name lookup: "Dispose"
 
 | Approach | Time | Results |
 |----------|------|---------|
-| **This skill** (tags lookup) | ~108ms | 1,176 structured definitions with file, line, kind, scope |
-| **rg across source files** | ~6,000ms | 1,406 files containing the text (includes usages, comments, strings) |
+| **ctags-lookup** (`rg` + `jq`) | ~233ms | 1,176 structured definitions with file, line, kind, scope |
+| **rg across source files** | ~8,107ms | 1,448 files containing the text (includes usages, comments, strings) |
 
-The skill is **~60x faster** and returns only **definitions** — not usages, not comments, not string literals. Each result includes the exact file, line number, symbol kind, and containing scope, so the agent can jump directly to the right location without further searching.
+**~35x faster**, returning only definitions — not usages, not comments, not string literals.
 
-For prefix queries (e.g., finding all `Get*` methods), the skill returns structured results for thousands of symbols in under 2 seconds — something that would require multiple grep passes and heuristic filtering otherwise.
+### Prefix lookup: "Get*"
+
+| Approach | Time | Results |
+|----------|------|---------|
+| **ctags-lookup** (`rg` + `jq`) | ~815ms | 23,350 structured definitions |
+| **rg across source files** | ~8,277ms | 9,413 files containing "Get" anywhere |
+
+**~10x faster** for broad prefix queries, and returns structured symbol data vs. raw file matches.
+
+Each result includes the exact file, line number, symbol kind, and containing scope, so the agent can jump directly to the right location without further searching.
 
 ## Test Fixture
 
