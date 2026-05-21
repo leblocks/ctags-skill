@@ -1,25 +1,32 @@
 # ctags-lookup
 
-Fast symbol lookup in Universal Ctags `tags` files using ripgrep. Use when navigating large codebases, finding symbol definitions, or resolving symbol locations.
+Fast symbol lookup in Universal Ctags `tags` files using ripgrep + jq. Use when navigating large codebases, finding symbol definitions, or resolving symbol locations.
 
 ## Quick Start
 
-Requires `rg` (ripgrep) on PATH and a tags file generated with:
+Requires `rg` (ripgrep) and `jq` on PATH, plus a tags file generated with:
 ```
 ctags -R --fields=+lKn --extras=+f -o tags .
 ```
 
 ## Commands
 
-```powershell
+```bash
 # Exact name lookup
-./scripts/lookup.ps1 -Name "SymbolName"
+./scripts/lookup.sh --name "SymbolName"
 
 # Prefix search
-./scripts/lookup.ps1 -Prefix "Get"
+./scripts/lookup.sh --prefix "Get"
 
 # Specify tags file location
-./scripts/lookup.ps1 -TagsFile "/path/to/tags" -Name "MyClass"
+./scripts/lookup.sh --tags-file "/path/to/tags" --name "MyClass"
+```
+
+On Windows (CMD):
+```cmd
+scripts\lookup.cmd --name "SymbolName"
+scripts\lookup.cmd --prefix "Get"
+scripts\lookup.cmd --tags-file "C:\path\to\tags" --name "MyClass"
 ```
 
 ## Output
@@ -28,11 +35,6 @@ JSON array of objects with: `Name`, `Kind`, `File`, `Line`, `Scope`. Empty resul
 
 ## Architecture
 
-- `scripts/core.ps1` — `Invoke-CtagsLookup` function. Streams parsed results to the pipeline.
-- `scripts/lookup.ps1` — CLI entry point. Outputs JSON.
-
-## Testing
-
-```powershell
-Invoke-Pester ./test/ctags-lookup.Tests.ps1
-```
+- `scripts/parse-ctags.jq` — jq filter that parses tab-delimited ctags output into JSON objects.
+- `scripts/lookup.sh` — Bash entry point. Builds rg pattern, pipes to jq.
+- `scripts/lookup.cmd` — Windows CMD entry point. Same interface.
