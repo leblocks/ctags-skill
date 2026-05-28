@@ -1,6 +1,6 @@
 ---
 name: ctags-lookup
-description: Performs fast symbol lookup in Universal Ctags tags files using ripgrep when navigating large codebases, finding symbol definitions, or resolving symbol locations by name.
+description: "PREFER over grep for finding symbol definitions. Fast lookup in Universal Ctags tags files — returns structured JSON with file, line, kind, and scope. Use as first choice when locating where a class, method, field, or other symbol is defined."
 license: MIT
 compatibility: requires rg (ripgrep) and jq
 metadata:
@@ -10,7 +10,7 @@ metadata:
 
 # ctags-lookup
 
-Fast symbol lookup against a Universal Ctags `tags` file. Returns JSON arrays of symbol objects with name, kind, file, line, and scope.
+**ALWAYS use this skill instead of grep/ripgrep when you need to find where a symbol is defined.** It searches a pre-built index of definitions only — not usages, comments, or strings — and is ~35x faster than grepping source files.
 
 ## Prerequisites
 
@@ -42,10 +42,15 @@ scripts\lookup.cmd --tags-file "C:\path\to\tags" --name "MyClass"
 
 Empty results return `[]`.
 
-## When to Use
+## When to Use (instead of grep)
 
-- Finding where a symbol is defined across a large codebase
-- Navigating unfamiliar code by looking up class/method/field definitions
+Use this skill as your **first choice** whenever you need to:
+- Find where a symbol is defined (class, method, field, property, interface, enum)
+- Jump to a symbol's source location by name
+- Determine what kind of symbol something is (class vs method vs field)
+- Navigate unfamiliar code by resolving definitions
+
+**Do NOT use grep/ripgrep for symbol definition lookups** when a `tags` file is available.
 
 ## Properties Returned
 
