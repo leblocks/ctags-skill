@@ -35,8 +35,8 @@ Describe "lookup.cmd" {
             $result.ExitCode | Should -Not -Be 0
         }
 
-        It "Should fail when both --name and --prefix are provided" {
-            $result = Invoke-Lookup -Arguments @("--tags-file", $Script:TagsFile, "--name", "Foo", "--prefix", "Bar")
+        It "Should fail when unknown argument is provided" {
+            $result = Invoke-Lookup -Arguments @("--tags-file", $Script:TagsFile, "--prefix", "Bar")
             $result.ExitCode | Should -Not -Be 0
         }
 
@@ -75,23 +75,9 @@ Describe "lookup.cmd" {
 
     Context "Prefix Search" {
 
-        It "Should find symbols starting with prefix" {
+        It "Should not support --prefix" {
             $result = Invoke-Lookup -Arguments @("--tags-file", $Script:TagsFile, "--prefix", "Dispose")
-            $result.ExitCode | Should -Be 0
-            $result.Results.Count | Should -BeGreaterThan 0
-            $result.Results | ForEach-Object { $_.Name | Should -BeLike "Dispose*" }
-        }
-
-        It "Should find multiple symbols with common prefix" {
-            $result = Invoke-Lookup -Arguments @("--tags-file", $Script:TagsFile, "--prefix", "ACCEPT_")
-            $result.Results.Count | Should -BeGreaterThan 1
-            $result.Results | ForEach-Object { $_.Name | Should -BeLike "ACCEPT_*" }
-        }
-
-        It "Should return empty for non-matching prefix" {
-            $result = Invoke-Lookup -Arguments @("--tags-file", $Script:TagsFile, "--prefix", "ZZZNONEXISTENT")
-            $result.ExitCode | Should -Be 0
-            $result.Json | Should -Be "[]"
+            $result.ExitCode | Should -Not -Be 0
         }
     }
 
@@ -146,7 +132,8 @@ Describe "lookup.cmd" {
         }
 
         It "Should handle entries without scope" {
-            $result = Invoke-Lookup -Arguments @("--tags-file", $Script:TagsFile, "--prefix", "LinqToSqlShared")
+            $result = Invoke-Lookup -Arguments @("--tags-file", $Script:TagsFile, "--name", "LinqToSqlShared.Mapping")
+            $result.ExitCode | Should -Be 0
             $noScope = $result.Results | Where-Object { [string]::IsNullOrEmpty($_.Scope) }
             $noScope.Count | Should -BeGreaterThan 0
         }

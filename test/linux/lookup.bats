@@ -8,13 +8,12 @@ TAGS="./test/dotnet-reference-source-tags"
 @test "fails when no arguments are provided" {
     run "$LOOKUP" --tags-file "$TAGS"
     [ "$status" -ne 0 ]
-    [[ "$output" == *"--name"* ]] || [[ "$output" == *"--prefix"* ]]
+    [[ "$output" == *"--name"* ]]
 }
 
-@test "fails when both --name and --prefix are provided" {
-    run "$LOOKUP" --tags-file "$TAGS" --name "Foo" --prefix "Bar"
+@test "fails when both --name and unknown arg are provided" {
+    run "$LOOKUP" --tags-file "$TAGS" --prefix "Bar"
     [ "$status" -ne 0 ]
-    [[ "$output" == *"not both"* ]]
 }
 
 @test "fails when tags file does not exist" {
@@ -79,31 +78,11 @@ TAGS="./test/dotnet-reference-source-tags"
     [ "$count" -gt 1 ]
 }
 
-# --- Prefix Search ---
+# --- Prefix Search (removed) ---
 
-@test "finds symbols starting with prefix" {
+@test "rejects --prefix as unknown argument" {
     run "$LOOKUP" --tags-file "$TAGS" --prefix "Dispose"
-    [ "$status" -eq 0 ]
-    count=$(echo "$output" | jq 'length')
-    [ "$count" -gt 0 ]
-    # All names should start with "Dispose"
-    mismatches=$(echo "$output" | jq '[.[] | select(.Name | startswith("Dispose") | not)] | length')
-    [ "$mismatches" -eq 0 ]
-}
-
-@test "finds multiple symbols with common prefix" {
-    run "$LOOKUP" --tags-file "$TAGS" --prefix "ACCEPT_"
-    [ "$status" -eq 0 ]
-    count=$(echo "$output" | jq 'length')
-    [ "$count" -gt 1 ]
-    mismatches=$(echo "$output" | jq '[.[] | select(.Name | startswith("ACCEPT_") | not)] | length')
-    [ "$mismatches" -eq 0 ]
-}
-
-@test "returns empty for non-matching prefix" {
-    run "$LOOKUP" --tags-file "$TAGS" --prefix "ZZZNONEXISTENT"
-    [ "$status" -eq 0 ]
-    [ "$output" = "[]" ]
+    [ "$status" -ne 0 ]
 }
 
 # --- Output Structure ---
@@ -167,7 +146,7 @@ TAGS="./test/dotnet-reference-source-tags"
 }
 
 @test "handles entries without scope" {
-    run "$LOOKUP" --tags-file "$TAGS" --prefix "LinqToSqlShared"
+    run "$LOOKUP" --tags-file "$TAGS" --name "LinqToSqlShared.Mapping"
     [ "$status" -eq 0 ]
     empty_scopes=$(echo "$output" | jq '[.[] | select(.Scope == "")] | length')
     [ "$empty_scopes" -gt 0 ]

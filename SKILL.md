@@ -1,6 +1,6 @@
 ---
 name: ctags-lookup
-description: Performs fast symbol lookup in Universal Ctags tags files using ripgrep when navigating large codebases, finding symbol definitions, or resolving symbol locations by name or prefix.
+description: Performs fast symbol lookup in Universal Ctags tags files using ripgrep when navigating large codebases, finding symbol definitions, or resolving symbol locations by name.
 license: MIT
 compatibility: requires rg (ripgrep) and jq
 metadata:
@@ -24,9 +24,6 @@ Fast symbol lookup against a Universal Ctags `tags` file. Returns JSON arrays of
 # Exact symbol name lookup
 ./scripts/lookup.sh --name "Dispose"
 
-# Prefix search (starts-with)
-./scripts/lookup.sh --prefix "Get"
-
 # Custom tags file path
 ./scripts/lookup.sh --tags-file "/path/to/tags" --name "MyClass"
 ```
@@ -34,7 +31,6 @@ Fast symbol lookup against a Universal Ctags `tags` file. Returns JSON arrays of
 On Windows:
 ```cmd
 scripts\lookup.cmd --name "Dispose"
-scripts\lookup.cmd --prefix "Get"
 scripts\lookup.cmd --tags-file "C:\path\to\tags" --name "MyClass"
 ```
 
@@ -49,8 +45,6 @@ Empty results return `[]`.
 ## When to Use
 
 - Finding where a symbol is defined across a large codebase
-- Resolving overloaded method locations
-- Discovering symbols by prefix (e.g., all `Get*` methods)
 - Navigating unfamiliar code by looking up class/method/field definitions
 
 ## Properties Returned

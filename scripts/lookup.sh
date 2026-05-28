@@ -2,7 +2,6 @@
 # ctags-lookup using rg + jq
 # Usage:
 #   ./lookup.sh --name "Dispose"
-#   ./lookup.sh --prefix "Get"
 #   ./lookup.sh --name "Dispose" --tags-file /path/to/tags
 
 set -euo pipefail
@@ -12,15 +11,12 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Defaults
 TAGS_FILE=""
 NAME=""
-PREFIX=""
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --name)
             NAME="$2"; shift 2 ;;
-        --prefix)
-            PREFIX="$2"; shift 2 ;;
         --tags-file)
             TAGS_FILE="$2"; shift 2 ;;
         *)
@@ -34,13 +30,8 @@ if [[ -z "$TAGS_FILE" ]]; then
 fi
 
 # Validation
-if [[ -n "$NAME" && -n "$PREFIX" ]]; then
-    echo "Error: specify either --name or --prefix, not both." >&2
-    exit 1
-fi
-
-if [[ -z "$NAME" && -z "$PREFIX" ]]; then
-    echo "Error: specify at least one of: --name, --prefix" >&2
+if [[ -z "$NAME" ]]; then
+    echo "Error: --name is required" >&2
     exit 1
 fi
 
@@ -59,15 +50,9 @@ if ! command -v jq &>/dev/null; then
     exit 1
 fi
 
-# Build rg pattern
-if [[ -n "$NAME" ]]; then
-    # Escape regex metacharacters in the name
-    ESCAPED=$(printf '%s' "$NAME" | sed 's/[][\\.^$*+?{}()|]/\\&/g')
-    RG_PATTERN="^${ESCAPED}\t"
-else
-    ESCAPED=$(printf '%s' "$PREFIX" | sed 's/[][\\.^$*+?{}()|]/\\&/g')
-    RG_PATTERN="^${ESCAPED}[^\t]*\t"
-fi
+# Build rg pattern — escape regex metacharacters in the name
+ESCAPED=$(printf '%s' "$NAME" | sed 's/[][\\.^$*+?{}()|]/\\&/g')
+RG_PATTERN="^${ESCAPED}\t"
 
 # Run rg and pipe to jq
 # rg exits 1 on no matches — that's fine, we'll get empty input to jq which produces []

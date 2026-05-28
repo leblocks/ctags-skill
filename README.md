@@ -45,9 +45,6 @@ The `--fields=+lKn` flag is important — it includes line numbers and kind info
 # Exact symbol name
 ./scripts/lookup.sh --name "Dispose"
 
-# Prefix search
-./scripts/lookup.sh --prefix "Get"
-
 # Custom tags file path
 ./scripts/lookup.sh --tags-file "/path/to/tags" --name "MyClass"
 ```
@@ -56,7 +53,6 @@ The `--fields=+lKn` flag is important — it includes line numbers and kind info
 
 ```cmd
 scripts\lookup.cmd --name "Dispose"
-scripts\lookup.cmd --prefix "Get"
 scripts\lookup.cmd --tags-file "C:\myproject\tags" --name "MyClass"
 ```
 
@@ -90,15 +86,6 @@ When an agent needs to find where a symbol is defined, it typically greps across
 | **rg across source files** | ~8,107ms | 1,448 files containing the text (includes usages, comments, strings) |
 
 **~35x faster**, returning only definitions — not usages, not comments, not string literals.
-
-### Prefix lookup: "Get*"
-
-| Approach | Time | Results |
-|----------|------|---------|
-| **ctags-lookup** (`rg` + `jq`) | ~815ms | 23,350 structured definitions |
-| **rg across source files** | ~8,277ms | 9,413 files containing "Get" anywhere |
-
-**~10x faster** for broad prefix queries, and returns structured symbol data vs. raw file matches.
 
 Each result includes the exact file, line number, symbol kind, and containing scope, so the agent can jump directly to the right location without further searching.
 

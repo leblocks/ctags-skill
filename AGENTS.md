@@ -15,9 +15,6 @@ ctags -R --fields=+lKn --extras=+f -o tags .
 # Exact name lookup
 ./scripts/lookup.sh --name "SymbolName"
 
-# Prefix search
-./scripts/lookup.sh --prefix "Get"
-
 # Specify tags file location
 ./scripts/lookup.sh --tags-file "/path/to/tags" --name "MyClass"
 ```
@@ -25,7 +22,6 @@ ctags -R --fields=+lKn --extras=+f -o tags .
 On Windows (CMD):
 ```cmd
 scripts\lookup.cmd --name "SymbolName"
-scripts\lookup.cmd --prefix "Get"
 scripts\lookup.cmd --tags-file "C:\path\to\tags" --name "MyClass"
 ```
 
