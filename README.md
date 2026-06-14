@@ -1,4 +1,4 @@
-# ctags-skill [![skills.sh](https://skills.sh/b/owner/repo)](https://skills.sh/leblocks/ctags-skill)
+# ctags-skill [![skills.sh](https://skills.sh/b/leblocks/ctags-skill)](https://skills.sh/leblocks/ctags-skill)
 
 Fast symbol lookup for navigating large codebases using Universal Ctags `tags` files.
 Powered by [ripgrep](https://github.com/BurntSushi/ripgrep) + [jq](https://jqlang.github.io/jq/) for speed. Outputs JSON.
